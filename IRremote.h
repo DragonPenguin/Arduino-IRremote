@@ -79,6 +79,8 @@
 #define DECODE_LEGO_PF       0 // NOT WRITTEN
 #define SEND_LEGO_PF         1
 
+#define SEND_HVAC            1
+
 //------------------------------------------------------------------------------
 // When sending a Pronto code we request to send either the "once" code
 //                                                   or the "repeat" code
@@ -121,6 +123,59 @@ typedef
 		LEGO_PF,
 	}
 decode_type_t;
+
+
+// Enums for HVAC options
+typedef enum HvacMode {
+  HVAC_HOT,
+  HVAC_COLD,
+  HVAC_DRY,
+  HVAC_FAN, // used for Panasonic only
+  HVAC_AUTO
+} HvacMode_t; // HVAC  MODE
+
+typedef enum HvacFanMode {
+  FAN_SPEED_1,
+  FAN_SPEED_2,
+  FAN_SPEED_3,
+  FAN_SPEED_4,
+  FAN_SPEED_5,
+  FAN_SPEED_AUTO,
+  FAN_SPEED_SILENT
+} HvacFanMode_;  // HVAC  FAN MODE
+
+typedef enum HvacVanneMode {
+  VANNE_AUTO,
+  VANNE_H1,
+  VANNE_H2,
+  VANNE_H3,
+  VANNE_H4,
+  VANNE_H5,
+  VANNE_AUTO_MOVE
+} HvacVanneMode_;  // HVAC  VANNE MODE
+
+typedef enum HvacWideVanneMode {
+  WIDE_LEFT_END,
+  WIDE_LEFT,
+  WIDE_MIDDLE,
+  WIDE_RIGHT,
+  WIDE_RIGHT_END,
+  WIDE_SWING
+} HvacWideVanneMode_t;  // HVAC  WIDE VANNE MODE
+
+typedef enum HvacAreaMode {
+  AREA_SWING,
+  AREA_LEFT,
+  AREA_AUTO,
+  AREA_RIGHT
+} HvacAreaMode_t;  // HVAC  WIDE VANNE MODE
+
+typedef enum HvacProfileMode {
+  NORMAL,
+  QUIET,
+  BOOST
+} HvacProfileMode_t;  // HVAC PANASONIC OPTION MODE
+
 
 //------------------------------------------------------------------------------
 // Set DEBUG to 1 for lots of lovely debug output
@@ -315,7 +370,7 @@ class IRsend
 			void  sendSanyo      ( ) ; // NOT WRITTEN
 #		endif
 		//......................................................................
-#		if SEND_MISUBISHI
+#		if SEND_MITSUBISHI
 			void  sendMitsubishi ( ) ; // NOT WRITTEN
 #		endif
 		//......................................................................
@@ -338,6 +393,54 @@ class IRsend
 //......................................................................
 #		if SEND_LEGO_PF
 			void  sendLegoPowerFunctions (uint16_t data, bool repeat = true) ;
+#		endif
+		//......................................................................
+#		if SEND_HVAC
+			void sendHvacMitsubishi(
+				HvacMode                  HVAC_Mode,           // Example HVAC_HOT  HvacMitsubishiMode
+				int                       HVAC_Temp,           // Example 21  (°c)
+				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO  HvacMitsubishiFanMode
+				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE  HvacMitsubishiVanneMode
+				int                       OFF                  // Example false
+			);
+			// Add support for W001CP R61Y23304 Remote Controller
+			void sendHvacMitsubishi_W001CP(
+				HvacMode                  HVAC_Mode,           // Example HVAC_HOT.         HvacMitsubishiMode
+				                                               // This type support HVAC_HOT,HVAC_COLD,HVAC_DRY,HVAC_FAN,HVAC_AUTO.
+				int                       HVAC_Temp,           // Example 21  (°c).
+				                                               // This type support 17~28 in HVAC_HOT mode, 19~30 in HVAC_COLD and HVAC_DRY mode.
+				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO.   HvacMitsubishiFanMode
+				                                               // This type support FAN_SPEED_1,FAN_SPEED_2,FAN_SPEED_3,FAN_SPEED_4.
+				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE.  HvacMitsubishiVanneMode
+				                                               // This type support support VANNE_AUTO,VANNE_H1,VANNE_H2,VANNE_H3,VANNE_H4.
+				int                       OFF                  // Example false
+			);
+			void sendHvacMitsubishiFD(
+				HvacMode                  HVAC_Mode,           // Example HVAC_HOT  HvacMitsubishiMode
+				int                       HVAC_Temp,           // Example 21  (°c)
+				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO  HvacMitsubishiFanMode
+				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE  HvacMitsubishiVanneMode
+				HvacAreaMode              HVAC_AreaMode,       // Example AREA_AUTO
+				HvacWideVanneMode         HVAC_WideMode,       // Example WIDE_MIDDLE
+				int                       HVAC_PLASMA,         // Example true to Turn ON PLASMA Function
+				int                       HVAC_CLEAN_MODE,     // Example false 
+				int                       HVAC_ISEE,           // Example False
+				int                       OFF                  // Example false to Turn ON HVAC / true to request to turn off
+			);
+			void sendHvacPanasonic(
+				HvacMode                  HVAC_Mode,           // Example HVAC_HOT  HvacPanasonicMode
+				int                       HVAC_Temp,           // Example 21  (°c)
+				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO  HvacPanasonicFanMode
+				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE  HvacPanasonicVanneMode
+				HvacProfileMode           HVAC_ProfileMode,    // Example QUIET HvacProfileMode
+				int                       HVAC_SWITCH          // Example false
+			);
+			void sendHvacToshiba(
+				HvacMode                HVAC_Mode,           // Example HVAC_HOT
+				int                     HVAC_Temp,           // Example 21  (°c)
+				HvacFanMode             HVAC_FanMode,        // Example FAN_SPEED_AUTO
+				int                     OFF                  // Example false
+			);
 #		endif
 } ;
 
