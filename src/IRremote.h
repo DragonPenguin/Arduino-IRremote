@@ -1,3 +1,7 @@
+/**
+ * @file IRremote.h
+ * @brief Public API to the library.
+ */
 
 //******************************************************************************
 // IRremote
@@ -21,7 +25,7 @@
 //------------------------------------------------------------------------------
 // The ISR header contains several useful macros the user may wish to use
 //
-#include "IRremoteInt.h"
+#include "private/IRremoteInt.h"
 
 //------------------------------------------------------------------------------
 // Supported IR protocols
@@ -124,62 +128,9 @@ typedef
 	}
 decode_type_t;
 
-
-// Enums for HVAC options
-typedef enum HvacMode {
-  HVAC_HOT,
-  HVAC_COLD,
-  HVAC_DRY,
-  HVAC_FAN, // used for Panasonic only
-  HVAC_AUTO
-} HvacMode_t; // HVAC  MODE
-
-typedef enum HvacFanMode {
-  FAN_SPEED_1,
-  FAN_SPEED_2,
-  FAN_SPEED_3,
-  FAN_SPEED_4,
-  FAN_SPEED_5,
-  FAN_SPEED_AUTO,
-  FAN_SPEED_SILENT
-} HvacFanMode_;  // HVAC  FAN MODE
-
-typedef enum HvacVanneMode {
-  VANNE_AUTO,
-  VANNE_H1,
-  VANNE_H2,
-  VANNE_H3,
-  VANNE_H4,
-  VANNE_H5,
-  VANNE_AUTO_MOVE
-} HvacVanneMode_;  // HVAC  VANNE MODE
-
-typedef enum HvacWideVanneMode {
-  WIDE_LEFT_END,
-  WIDE_LEFT,
-  WIDE_MIDDLE,
-  WIDE_RIGHT,
-  WIDE_RIGHT_END,
-  WIDE_SWING
-} HvacWideVanneMode_t;  // HVAC  WIDE VANNE MODE
-
-typedef enum HvacAreaMode {
-  AREA_SWING,
-  AREA_LEFT,
-  AREA_AUTO,
-  AREA_RIGHT
-} HvacAreaMode_t;  // HVAC  WIDE VANNE MODE
-
-typedef enum HvacProfileMode {
-  NORMAL,
-  QUIET,
-  BOOST
-} HvacProfileMode_t;  // HVAC PANASONIC OPTION MODE
-
-
-//------------------------------------------------------------------------------
-// Set DEBUG to 1 for lots of lovely debug output
-//
+/**
+ * Set DEBUG to 1 for lots of lovely debug output.
+ */
 #define DEBUG  0
 
 //------------------------------------------------------------------------------
@@ -189,9 +140,21 @@ typedef enum HvacProfileMode {
 #	define DBG_PRINT(...)    Serial.print(__VA_ARGS__)
 #	define DBG_PRINTLN(...)  Serial.println(__VA_ARGS__)
 #else
+/**
+ * If DEBUG, print the arguments, otherwise do nothing.
+ */
 #	define DBG_PRINT(...)
+/**
+ * If DEBUG, print the arguments as a line, otherwise do nothing.
+ */
 #	define DBG_PRINTLN(...)
 #endif
+
+//------------------------------------------------------------------------------
+// Helper macro for getting a macro definition as string
+//
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 //------------------------------------------------------------------------------
 // Mark & Space matching functions
@@ -206,13 +169,13 @@ int  MATCH_SPACE (int measured_ticks, int desired_us) ;
 class decode_results
 {
 	public:
-		decode_type_t          decode_type;  // UNKNOWN, NEC, SONY, RC5, ...
-		unsigned int           address;      // Used by Panasonic & Sharp [16-bits]
-		unsigned long          value;        // Decoded value [max 32-bits]
-		int                    bits;         // Number of bits in decoded value
-		volatile unsigned int  *rawbuf;      // Raw intervals in 50uS ticks
-		int                    rawlen;       // Number of records in rawbuf
-		int                    overflow;     // true iff IR raw code too long
+		decode_type_t          decode_type;  ///< UNKNOWN, NEC, SONY, RC5, ...
+		unsigned int           address;      ///< Used by Panasonic & Sharp [16-bits]
+		unsigned long          value;        ///< Decoded value [max 32-bits]
+		int                    bits;         ///< Number of bits in decoded value
+		volatile unsigned int  *rawbuf;      ///< Raw intervals in 50uS ticks
+		int                    rawlen;       ///< Number of records in rawbuf
+		int                    overflow;     ///< true iff IR raw code too long
 };
 
 //------------------------------------------------------------------------------
@@ -226,13 +189,45 @@ class decode_results
 class IRrecv
 {
 	public:
+                /**
+                 * Instantiate the IRrecv class. Multiple instantiation is not supported.
+                 * @param recvpin Arduino pin to use. No sanity check is made.
+                 */
 		IRrecv (int recvpin) ;
+                /**
+                 * Instantiate the IRrecv class. Multiple instantiation is not supported.
+                 * @param recvpin Arduino pin to use, where a demodulating IR receiver is connected.
+                 * @param blinkpin pin to blink when receiving IR. Not supported by all hardware. No sanity check is made.
+                 */
 		IRrecv (int recvpin, int blinkpin);
 
+                /**
+                 * TODO: Why is this public???
+                 * @param blinkflag
+                 */
 		void  blink13    (int blinkflag) ;
+
+                /**
+                 * Attempt to decode the recently receive IR signal
+                 * @param results decode_results instance returning the decode, if any.
+                 * @return success of operation. TODO: convert to bool
+                 */
 		int   decode     (decode_results *results) ;
+
+                /**
+                 * Enable IR reception.
+                 */
 		void  enableIRIn ( ) ;
+
+                /**
+                 * Returns status of reception
+                 * @return true if no reception is on-going.
+                 */
 		bool  isIdle     ( ) ;
+
+                /**
+                 * Called to re-enable IR reception.
+                 */
 		void  resume     ( ) ;
 
 	private:
@@ -245,6 +240,11 @@ class IRrecv
 			int  getRClevel (decode_results *results,  int *offset,  int *used,  int t1) ;
 #		endif
 #		if DECODE_RC5
+                        /**
+                         * Try to decode the recently received IR signal as an RC5 signal-
+                         * @param results decode_results instance returning the decode, if any.
+                         * @return Success of the operation.
+                         */
 			bool  decodeRC5        (decode_results *results) ;
 #		endif
 #		if DECODE_RC6
@@ -314,7 +314,18 @@ class IRrecv
 class IRsend
 {
 	public:
-		IRsend () { }
+#ifdef USE_SOFT_CARRIER
+
+		IRsend(int pin = SEND_PIN)
+		{
+			sendPin = pin;
+		}
+#else
+
+		IRsend()
+		{
+		}
+#endif
 
 		void  custom_delay_usec (unsigned long uSecs);
 		void  enableIROut 		(int khz) ;
@@ -325,6 +336,7 @@ class IRsend
 		//......................................................................
 #		if SEND_RC5
 			void  sendRC5        (unsigned long data,  int nbits) ;
+			void  sendRC5ext     (unsigned long addr, unsigned long cmd, boolean toggle);
 #		endif
 #		if SEND_RC6
 			void  sendRC6        (unsigned long data,  int nbits) ;
@@ -394,54 +406,20 @@ class IRsend
 #		if SEND_LEGO_PF
 			void  sendLegoPowerFunctions (uint16_t data, bool repeat = true) ;
 #		endif
-		//......................................................................
-#		if SEND_HVAC
-			void sendHvacMitsubishi(
-				HvacMode                  HVAC_Mode,           // Example HVAC_HOT  HvacMitsubishiMode
-				int                       HVAC_Temp,           // Example 21  (°c)
-				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO  HvacMitsubishiFanMode
-				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE  HvacMitsubishiVanneMode
-				int                       OFF                  // Example false
-			);
-			// Add support for W001CP R61Y23304 Remote Controller
-			void sendHvacMitsubishi_W001CP(
-				HvacMode                  HVAC_Mode,           // Example HVAC_HOT.         HvacMitsubishiMode
-				                                               // This type support HVAC_HOT,HVAC_COLD,HVAC_DRY,HVAC_FAN,HVAC_AUTO.
-				int                       HVAC_Temp,           // Example 21  (°c).
-				                                               // This type support 17~28 in HVAC_HOT mode, 19~30 in HVAC_COLD and HVAC_DRY mode.
-				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO.   HvacMitsubishiFanMode
-				                                               // This type support FAN_SPEED_1,FAN_SPEED_2,FAN_SPEED_3,FAN_SPEED_4.
-				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE.  HvacMitsubishiVanneMode
-				                                               // This type support support VANNE_AUTO,VANNE_H1,VANNE_H2,VANNE_H3,VANNE_H4.
-				int                       OFF                  // Example false
-			);
-			void sendHvacMitsubishiFD(
-				HvacMode                  HVAC_Mode,           // Example HVAC_HOT  HvacMitsubishiMode
-				int                       HVAC_Temp,           // Example 21  (°c)
-				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO  HvacMitsubishiFanMode
-				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE  HvacMitsubishiVanneMode
-				HvacAreaMode              HVAC_AreaMode,       // Example AREA_AUTO
-				HvacWideVanneMode         HVAC_WideMode,       // Example WIDE_MIDDLE
-				int                       HVAC_PLASMA,         // Example true to Turn ON PLASMA Function
-				int                       HVAC_CLEAN_MODE,     // Example false 
-				int                       HVAC_ISEE,           // Example False
-				int                       OFF                  // Example false to Turn ON HVAC / true to request to turn off
-			);
-			void sendHvacPanasonic(
-				HvacMode                  HVAC_Mode,           // Example HVAC_HOT  HvacPanasonicMode
-				int                       HVAC_Temp,           // Example 21  (°c)
-				HvacFanMode               HVAC_FanMode,        // Example FAN_SPEED_AUTO  HvacPanasonicFanMode
-				HvacVanneMode             HVAC_VanneMode,      // Example VANNE_AUTO_MOVE  HvacPanasonicVanneMode
-				HvacProfileMode           HVAC_ProfileMode,    // Example QUIET HvacProfileMode
-				int                       HVAC_SWITCH          // Example false
-			);
-			void sendHvacToshiba(
-				HvacMode                HVAC_Mode,           // Example HVAC_HOT
-				int                     HVAC_Temp,           // Example 21  (°c)
-				HvacFanMode             HVAC_FanMode,        // Example FAN_SPEED_AUTO
-				int                     OFF                  // Example false
-			);
-#		endif
+
+#ifdef USE_SOFT_CARRIER
+	private:
+		int sendPin;
+
+		unsigned int periodTime;
+		unsigned int periodOnTime;
+
+		void sleepMicros(unsigned long us);
+		void sleepUntilMicros(unsigned long targetTime);
+
+#else
+		const int sendPin = SEND_PIN;
+#endif
 } ;
 
 #endif
